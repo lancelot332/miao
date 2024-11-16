@@ -1,0 +1,102 @@
+---
+- hosts: all
+  become: yes
+  tasks:
+    # Scarica il repository Docker
+    - name: Download Docker repository
+      get_url:
+        url: https://download.docker.com/linux/centos/docker-ce.repo
+        dest: /etc/yum.repos.d/docker-ce.repo
+
+    # Installa Docker
+    - name: Install Docker
+      package:
+        name: docker-ce
+        state: present
+
+    # Avvia e abilita il servizio Docker
+    - name: Start Docker service
+      systemd:
+        name: docker
+        enabled: yes
+        state: started
+
+    - name: Install Python requests
+      package:
+        name: python3-requests
+        state: present
+
+    # Crea una rete Docker personalizzata
+    - name: Create a network with custom IPAM config
+      docker_network:
+        name: Mario_network
+        ipam_config:
+          - subnet: 192.168.10.0/24
+            gateway: 192.168.10.1
+
+    # Scarica l'immagine Docker per Jenkins Master
+    - name: Pull Docker image for Jenkins Master
+      docker_image:
+        name: jenkins/jenkins:lts
+        source: pull
+
+    # Crea il container Jenkins Master
+    - name: Create Jenkins container Master
+      docker_container:
+        name: jenkins_master
+        image: jenkins/jenkins:lts
+        networks:
+          - name: Mario_network
+            ipv4_address: 192.168.10.2
+        ports:
+          - "8080:8080"
+          - "50000:50000"
+        state: started
+        env:
+          JAVA_OPTS: "-Djenkins.install.runSetupWizard=false"
+
+    # Attendi che il Master Jenkins sia pronto
+    - name: Wait for Jenkins Master to be ready
+      uri:
+        url: "http://192.168.10.2:8080/login"
+        method: GET
+        status_code: 200
+      retries: 10
+      delay: 15
+      register: result
+      until: result is not failed
+
+    # Scarica l'immagine Docker per Jenkins Slave
+    - name: Pull Docker image for Jenkins Slave
+      docker_image:
+        name: jenkins/inbound-agent
+        source: pull
+
+    # Crea il container Jenkins Slave
+    - name: Create Jenkins container Slave
+      docker_container:
+        name: jenkins_slave
+        image: jenkins/inbound-agent
+        networks:
+          - name: Mario_network
+            ipv4_address: 192.168.10.3
+        env:
+          JENKINS_URL: "http://192.168.10.2:8080/"
+          JENKINS_AGENT_NAME: "jenkins_slave"
+          JENKINS_AGENT_WORKDIR: "/home/jenkins"
+          JENKINS_SECRET: "bf2dd73ff7330f16d1b20c35500151d405914965e8be806c918388a1197a6aa4"
+        state: started
+    # Scarica agent.jar nello Slave
+    - name: Download agent.jar in Jenkins Slave
+      command: >
+        docker exec jenkins_slave curl -O http://192.168.10.2:8080/jnlpJars/agent.jar
+
+    # Avvia Jenkins Slave e collegalo al Master
+    - name: Start Jenkins Slave and connect to Master
+      command: >
+        docker exec jenkins_slave java -jar agent.jar
+        -url http://192.168.10.2:8080/
+        -secret bf2dd73ff7330f16d1b20c35500151d405914965e8be806c918388a1197a6aa4
+        -name "jenkins_slave"
+        -webSocket
+        -workDir "/home/jenkins" &
