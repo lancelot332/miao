@@ -50,8 +50,15 @@ Di seguito la task:
 ```
 
 ## Quarto passo
-Ho installato un jenkins master in un container e ho specificato la rete da utilizzare. In seguito bisogna entrare su jenkins tramite browser dove ti richiederà di completare la configurazione, per fare ciò abbiamo bisogno della password che è presente nel file `/var/jenkins_home/secrets/initialAdminPassword` all' interno del container, per ottenerla si può utilizzare il comando `docker exec jenkins_master cat /var/jenkins_home/secrets/initialAdminPassword` e poi completare la configurazione.  
-Si può saltare questo passaggio specificando il parametro `JAVA_OPTS: "-Djenkins.install.runSetupWizard=false"` nel playbook di ansible. Questo parametro disabilita il setup guidato di jenkins ma bisogna in seguito installare tutti i plugin necessari all'interno di jenkins.
+Ho installato un jenkins master in un container e ho specificato la rete da utilizzare. In seguito bisogna entrare su jenkins tramite browser dove ti richiederà di completare la configurazione, per fare ciò abbiamo bisogno della password che è presente nel file 
+```bash
+/var/jenkins_home/secrets/initialAdminPassword` all' interno del container, per ottenerla si può utilizzare il comando `docker exec jenkins_master cat /var/jenkins_home/secrets/initialAdminPassword` e poi completare la configurazione.
+```
+Si può saltare questo passaggio specificando il parametro 
+```yaml
+JAVA_OPTS: "-Djenkins.install.runSetupWizard=false"
+```
+nel playbook di ansible. Questo parametro disabilita il setup guidato di jenkins ma bisogna in seguito installare tutti i plugin necessari all'interno di jenkins.
 
 ## Quinto passo
 Ho installato un jenkins slave in un container e ho specificato la rete che ho utilizzato con il master.  
