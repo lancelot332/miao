@@ -16,9 +16,9 @@ L'intero progetto deve essere configurato tramite strumenti di provisioning (Vag
 Ho creato un Vagrantfile che permette di installare una VM Rocky Linux 9.
 
 ## Secondo passo
-Ho creato un playbook che prenda prima la repository per installare docker e in seguito lo installa.
-Ecco le task che permettono l'installazione di docker:
-```
+Ho creato un playbook che prenda prima la repository per installare docker e in seguito lo installa.  
+Di seguito le task principali per l'installazione di Docker:
+```yaml
     - name: Download Docker repository
       get_url:
         url: https://download.docker.com/linux/centos/docker-ce.repo
@@ -38,9 +38,9 @@ Ecco le task che permettono l'installazione di docker:
 
 
 ## Terzo passo
-Ho configurato una rete per Docker utilizzando il modulo "docker_network".
-Ecco la task:
-```
+Ho configurato una rete per Docker utilizzando il modulo "docker_network".  
+Di seguito la task:
+```yaml
     - name: Create a network with custom IPAM config
       docker_network:
         name: Mario_network
@@ -56,7 +56,7 @@ Si può saltare questo passaggio specificando il parametro `JAVA_OPTS: "-Djenkin
 ## Quinto passo
 Ho installato un jenkins slave in un container e ho specificato la rete che ho utilizzato con il master.  
 Per collegare lo slave al master bisogna prima entrare su jenkins dal browser e creare un nodo slave/agent una volta fatto ciò bisogna prendere il token generato e inserirlo al posto di  `token_segreto`
-``` 
+```yaml
 - name: Start Jenkins Slave and connect to Master
       command: >
         docker exec jenkins_slave java -jar agent.jar
